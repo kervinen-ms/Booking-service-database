@@ -1,0 +1,66 @@
+image: python:3.9-slim
+
+stages:
+  - tasks
+
+services:
+  - name: postgres:15-alpine
+    alias: postgres
+
+
+
+variables:
+  POSTGRES_DB: postgres
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: password
+  POSTGRES_HOST_AUTH_METHOD: trust
+
+  DBNAME: postgres
+  DBHOST: postgres
+  DBPORT: 5432
+  DBUSER: postgres
+  DBPASSWORD: password
+
+  PROJECT_DIR: ${CI_PROJECT_DIR}
+  ANALYSIS_DIR: ${PROJECT_DIR}/analysis
+  SCRIPTS_DIR: ${PROJECT_DIR}/scripts
+  TESTS_DIR: ${PROJECT_DIR}/tests
+  UTILS_DIR: ${PROJECT_DIR}/utils
+  PYPSQL: ${UTILS_DIR}/pypsql.py
+
+  NO_COLOUR: '\033[0m'
+  LIGHT_RED: '\033[1;31m'
+
+
+.setup:
+  before_script:
+    - pip install -r ${PROJECT_DIR}/requirements.txt > /dev/null 2> /dev/null
+
+
+tasks from 3rd to 5th:
+  stage: tasks
+  extends:
+    - .setup
+  script:
+    - echo -e "${LIGHT_RED}>>> Task 3 <<<${NO_COLOUR}"
+    - python3 ${PYPSQL} --file="${SCRIPTS_DIR}/ddl.sql"
+
+    - echo -e "${LIGHT_RED}>>> Task 4-5 <<<${NO_COLOUR}"
+    - python3 ${PYPSQL} --file="${SCRIPTS_DIR}/inserts.sql"
+    - echo "Table 'bs.theaters' contains rows:"
+    - python3 ${PYPSQL} --sql="SELECT * FROM bs.theaters" --verbose
+    - echo "Table 'bs.auditoriums' contains rows:"
+    - python3 ${PYPSQL} --sql="SELECT * FROM bs.auditoriums" --verbose
+    - echo "Table 'bs.movies' contains rows:"
+    - python3 ${PYPSQL} --sql="SELECT * FROM bs.movies" --verbose
+    - echo "Table 'bs.showtimes' contains rows:"
+    - python3 ${PYPSQL} --sql="SELECT * FROM bs.showtimes" --verbose
+    - echo "Table 'bs.seats' contains rows:"
+    - python3 ${PYPSQL} --sql="SELECT * FROM bs.seats" --verbose
+    - echo "Table 'bs.users' contains rows:"
+    - python3 ${PYPSQL} --sql="SELECT * FROM bs.users" --verbose
+    - echo "Table ' bs.tariffs' contains rows:"
+    - python3 ${PYPSQL} --sql="SELECT * FROM  bs.tariffs" --verbose
+    - echo "Table ' bs.reservations' contains rows:"
+    - python3 ${PYPSQL} --sql="SELECT * FROM  bs.reservations" --verbose
+    - SCRIPT_PATH="${SCRIPTS_DIR}/select_count_table.sql" pytest ${TESTS_DIR}/test_select_count.py
